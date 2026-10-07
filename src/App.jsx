@@ -359,7 +359,6 @@ function PortfolioApp() {
   return (
     <main>
       <header className="site-header">
-        <button className="brand" onClick={() => jumpTo("#home")} aria-label="返回首页">Portfolio</button>
         <nav className={menuOpen ? "nav open" : "nav"} aria-label="主导航">
           <button onClick={() => jumpTo("#about")}>关于</button>
           <button onClick={() => jumpTo("#projects")}>项目</button>

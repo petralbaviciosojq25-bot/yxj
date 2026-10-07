@@ -36,22 +36,14 @@ button { font: inherit; }
   color: #fff;
 }
 
-.brand, .nav button, .menu-button, .project-card {
+.nav button, .menu-button, .project-card {
   border: 0;
   color: inherit;
   background: none;
   cursor: pointer;
 }
 
-.brand {
-  justify-self: start;
-  font-size: clamp(24px, 2vw, 34px);
-  font-weight: 650;
-  letter-spacing: -0.05em;
-  text-shadow: 0 1px 18px rgba(0, 0, 0, 0.5);
-}
-
-.nav { display: flex; gap: 38px; }
+.nav { grid-column: 2; display: flex; gap: 38px; }
 .nav button {
   position: relative;
   padding: 8px 0;
@@ -69,7 +61,7 @@ button { font: inherit; }
   transition: right 220ms ease;
 }
 .nav button:hover::after, .nav button:focus-visible::after { right: 0; }
-.menu-button { display: none; }
+.menu-button { grid-column: 3; display: none; }
 
 .hero-transition {
   position: relative;
@@ -364,8 +356,8 @@ button { font: inherit; }
 .footer > p { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -.04em; }
 .footer h2 {
   margin: 90px 0 42px;
-  font-size: clamp(52px, 8.5vw, 134px);
-  line-height: .86;
+  font-size: clamp(48px, 7.7vw, 120px);
+  line-height: 1.02;
   font-weight: 520;
   letter-spacing: -.035em;
   word-spacing: .08em;
@@ -579,8 +571,8 @@ button { font: inherit; }
     color: #101018;
     background: #fff;
   }
-  .brand { font-size: 28px; text-shadow: none; }
   .menu-button {
+    grid-column: 2;
     justify-self: end;
     display: grid;
     place-content: center;
@@ -646,7 +638,7 @@ button { font: inherit; }
   .modal-bar strong { font-size: 16px; }
   .modal-bar button { padding: 8px 15px; }
   .footer-row { flex-direction: column; }
-  .footer h2 { margin: 70px 0 36px; }
+  .footer h2 { margin: 70px 0 36px; font-size: clamp(30px, 9vw, 48px); }
   .footer-contacts a { width: 58px; height: 58px; }
   .contact-page-top, .contact-page-bottom { align-items: flex-start; }
   .contact-page-top { flex-wrap: wrap; }
