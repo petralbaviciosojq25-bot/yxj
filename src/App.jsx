@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/${name}`;
+const heroPoster = () => asset(window.matchMedia("(max-width: 720px)").matches ? "home-107-poster-mobile.webp" : "home-107-poster.webp");
 
 const projects = [
-  { cover: asset("project-cover-1.png"), src: asset("project-play.webp"), index: "01", title: "玩法活动", full: true },
-  { cover: asset("project-cover-2.png"), src: asset("project-kv.webp"), index: "02", title: "运营 KV", full: true },
-  { cover: asset("project-cover-3.png"), src: asset("project-brand.webp"), index: "03", title: "品牌活动", full: true },
-  { cover: asset("project-cover-4.png"), src: asset("project-ip.webp"), index: "04", title: "IP 设计", full: true },
+  { cover: asset("project-cover-1.webp?v=20261008"), mobileCover: asset("project-cover-1-mobile.webp"), src: asset("project-play.webp"), index: "01", title: "玩法活动", full: true },
+  { cover: asset("project-cover-2.webp?v=20261008"), mobileCover: asset("project-cover-2-mobile.webp"), src: asset("project-kv.webp"), index: "02", title: "运营 KV", full: true },
+  { cover: asset("project-cover-3.webp?v=20261008"), mobileCover: asset("project-cover-3-mobile.webp"), src: asset("project-brand.webp"), index: "03", title: "品牌活动", full: true },
+  { cover: asset("project-cover-4.webp?v=20261008"), mobileCover: asset("project-cover-4-mobile.webp"), src: asset("project-ip.webp"), index: "04", title: "IP 设计", full: true },
 ];
 
 const otherProjects = [
@@ -119,15 +120,26 @@ function ContactDetailPage({ type }) {
 }
 
 function HeroArtwork() {
+  const isMobile = window.matchMedia("(max-width: 720px)").matches;
+  const preferStatic = window.matchMedia("(prefers-reduced-motion: reduce)").matches || navigator.connection?.saveData;
   const [videoReady, setVideoReady] = useState(false);
+  const [videoRequested, setVideoRequested] = useState(!isMobile && !preferStatic);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (!isMobile || !videoRequested) return;
+    const video = videoRef.current;
+    video?.play().catch(() => {});
+  }, [isMobile, videoRequested]);
 
   return (
     <div className="hero-artwork">
-      <img className="hero-art" src={asset("home-107-poster.webp")} alt="紫色未来感角色作品集封面" fetchPriority="high" decoding="async" />
+      <img className="hero-art" src={heroPoster()} alt="紫色未来感角色作品集封面" fetchPriority="high" decoding="async" onLoad={() => { if (!preferStatic) setVideoRequested(true); }} />
       <video
+        ref={videoRef}
         className={videoReady ? "hero-motion is-ready" : "hero-motion"}
-        src={asset("home-107.mp4")}
-        poster={asset("home-107-poster.webp")}
+        src={videoRequested ? asset(isMobile ? "home-107-mobile.mp4" : "home-107.mp4") : undefined}
+        poster={heroPoster()}
         aria-hidden="true"
         onLoadedData={() => setVideoReady(true)}
         autoPlay
@@ -192,7 +204,10 @@ function AboutSection() {
           }}
         >
           <div className="about-photo-sheet" style={{ clipPath: `inset(0 0 ${(1 - left) * 100}% 0)` }}>
-            <img src={asset("photo-portrait-left.jpg")} alt="Yara 个人照片" loading="lazy" decoding="async" />
+            <picture>
+              <source media="(max-width: 720px)" srcSet={asset("photo-portrait-left-mobile.webp")} type="image/webp" />
+              <img src={asset("photo-portrait-left.jpg")} alt="Yara 个人照片" loading="lazy" decoding="async" fetchPriority="low" />
+            </picture>
           </div>
         </figure>
         <p className="about-copy" style={{ opacity: copy, transform: `translate3d(-50%, ${-50 + (1 - copy) * 12}%, 0)` }}>
@@ -208,7 +223,10 @@ function AboutSection() {
           }}
         >
           <div className="about-photo-sheet" style={{ clipPath: `inset(0 0 ${(1 - right) * 100}% 0)` }}>
-            <img src={asset("photo-portrait-2.webp")} alt="Yara 个人照片" loading="lazy" decoding="async" />
+            <picture>
+              <source media="(max-width: 720px)" srcSet={asset("photo-portrait-2-mobile.webp")} type="image/webp" />
+              <img src={asset("photo-portrait-2.webp")} alt="Yara 个人照片" loading="lazy" decoding="async" fetchPriority="low" />
+            </picture>
           </div>
         </figure>
       </div>
@@ -217,10 +235,27 @@ function AboutSection() {
 }
 
 function ProjectShowcase({ onOpen }) {
+  const sectionRef = useRef(null);
   const rowRefs = useRef([]);
   const titleRef = useRef(null);
+  const [coversReady, setCoversReady] = useState(false);
   const [motion, setMotion] = useState(() => projects.map(() => 0));
   const [stackSync, setStackSync] = useState(() => projects.map(() => 0));
+
+  useEffect(() => {
+    if (!window.IntersectionObserver) {
+      setCoversReady(true);
+      return undefined;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setCoversReady(true);
+        observer.disconnect();
+      }
+    }, { rootMargin: "300px 0px" });
+    observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     let frame = 0;
@@ -265,7 +300,7 @@ function ProjectShowcase({ onOpen }) {
   }, []);
 
   return (
-    <section id="projects" className="project-showcase" aria-label="重点项目">
+    <section id="projects" className="project-showcase" aria-label="重点项目" ref={sectionRef}>
       <h2 className="project-title" ref={titleRef}>Project</h2>
       <div className="project-list">
         {projects.map((project, index) => {
@@ -286,7 +321,12 @@ function ProjectShowcase({ onOpen }) {
                   transform: `translate3d(0, calc(${(1 - eased) * 18}% + ${syncOffset}px), 0) rotate(${(1 - eased) * 10}deg) scale(${0.98 + eased * 0.02})`,
                 }}
               >
-                <img src={project.cover} alt={`${project.title}封面`} loading="lazy" decoding="async" />
+                {coversReady ? (
+                  <picture>
+                    <source media="(max-width: 720px)" srcSet={project.mobileCover} type="image/webp" />
+                    <img src={project.cover} alt={`${project.title}封面`} loading="lazy" decoding="async" fetchPriority="low" />
+                  </picture>
+                ) : <span className="project-cover-placeholder" aria-hidden="true" />}
               </button>
             </div>
           );
@@ -304,7 +344,7 @@ function OtherProjectCard({ project, onOpen }) {
       onClick={() => onOpen(project)}
       aria-label={`打开${project.title || `其他项目 ${project.index}`}`}
     >
-      <img src={project.src} alt={`${project.title || `其他项目作品 ${project.index}`}封面`} loading="lazy" />
+      <img src={project.src} alt={`${project.title || `其他项目作品 ${project.index}`}封面`} loading="lazy" decoding="async" fetchPriority="low" />
       {project.type === "video" && <span className="other-video-mark" aria-hidden="true">▶</span>}
     </button>
   );
@@ -362,7 +402,7 @@ function PortfolioApp() {
     safetyTimer = window.setTimeout(reveal, 7000);
     poster.addEventListener("load", onPosterLoad);
     poster.addEventListener("error", reveal);
-    poster.src = asset("home-107-poster.webp");
+    poster.src = heroPoster();
     if (poster.complete) onPosterLoad();
 
     return () => {
