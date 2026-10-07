@@ -120,11 +120,11 @@ function ContactDetailPage({ type }) {
 function HeroArtwork() {
   return (
     <div className="hero-artwork">
-      <img className="hero-art" src={asset("home-final-sharp-poster.webp")} alt="紫色未来感角色作品集封面" />
+      <img className="hero-art" src={asset("home-107-poster.webp")} alt="紫色未来感角色作品集封面" />
       <video
         className="hero-motion"
-        src={asset("home-final-sharp.mp4")}
-        poster={asset("home-final-sharp-poster.webp")}
+        src={asset("home-107.mp4")}
+        poster={asset("home-107-poster.webp")}
         aria-hidden="true"
         autoPlay
         muted
