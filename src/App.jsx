@@ -85,6 +85,7 @@ function ContactDetailPage({ type }) {
 
   useEffect(() => {
     document.title = `${contact.english} — Portfolio`;
+    document.getElementById("site-preloader")?.remove();
     return () => { document.title = "Portfolio — Yara"; };
   }, [contact.english]);
 
@@ -118,14 +119,17 @@ function ContactDetailPage({ type }) {
 }
 
 function HeroArtwork() {
+  const [videoReady, setVideoReady] = useState(false);
+
   return (
     <div className="hero-artwork">
-      <img className="hero-art" src={asset("home-107-poster.webp")} alt="紫色未来感角色作品集封面" />
+      <img className="hero-art" src={asset("home-107-poster.webp")} alt="紫色未来感角色作品集封面" fetchPriority="high" decoding="async" />
       <video
-        className="hero-motion"
+        className={videoReady ? "hero-motion is-ready" : "hero-motion"}
         src={asset("home-107.mp4")}
         poster={asset("home-107-poster.webp")}
         aria-hidden="true"
+        onLoadedData={() => setVideoReady(true)}
         autoPlay
         muted
         loop
@@ -188,7 +192,7 @@ function AboutSection() {
           }}
         >
           <div className="about-photo-sheet" style={{ clipPath: `inset(0 0 ${(1 - left) * 100}% 0)` }}>
-            <img src={asset("photo-portrait-left.jpg")} alt="Yara 个人照片" />
+            <img src={asset("photo-portrait-left.jpg")} alt="Yara 个人照片" loading="lazy" decoding="async" />
           </div>
         </figure>
         <p className="about-copy" style={{ opacity: copy, transform: `translate3d(-50%, ${-50 + (1 - copy) * 12}%, 0)` }}>
@@ -204,7 +208,7 @@ function AboutSection() {
           }}
         >
           <div className="about-photo-sheet" style={{ clipPath: `inset(0 0 ${(1 - right) * 100}% 0)` }}>
-            <img src={asset("photo-portrait-2.webp")} alt="Yara 个人照片" />
+            <img src={asset("photo-portrait-2.webp")} alt="Yara 个人照片" loading="lazy" decoding="async" />
           </div>
         </figure>
       </div>
@@ -282,7 +286,7 @@ function ProjectShowcase({ onOpen }) {
                   transform: `translate3d(0, calc(${(1 - eased) * 18}% + ${syncOffset}px), 0) rotate(${(1 - eased) * 10}deg) scale(${0.98 + eased * 0.02})`,
                 }}
               >
-                <img src={project.cover} alt={`${project.title}封面`} />
+                <img src={project.cover} alt={`${project.title}封面`} loading="lazy" decoding="async" />
               </button>
             </div>
           );
@@ -327,6 +331,49 @@ function OtherProjects({ onOpen }) {
 function PortfolioApp() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeProject, setActiveProject] = useState(null);
+
+  useEffect(() => {
+    const overlay = document.getElementById("site-preloader");
+    if (!overlay) return undefined;
+
+    const startedAt = performance.now();
+    const poster = new Image();
+    let revealed = false;
+    let disposed = false;
+    let revealTimer;
+    let removeTimer;
+    let safetyTimer;
+
+    const reveal = () => {
+      if (disposed || revealed) return;
+      revealed = true;
+      window.clearTimeout(safetyTimer);
+      revealTimer = window.setTimeout(() => {
+        overlay.classList.add("is-hidden");
+        removeTimer = window.setTimeout(() => overlay.remove(), 650);
+      }, Math.max(0, 400 - (performance.now() - startedAt)));
+    };
+
+    const onPosterLoad = () => {
+      if (poster.decode) poster.decode().then(reveal, reveal);
+      else reveal();
+    };
+
+    safetyTimer = window.setTimeout(reveal, 7000);
+    poster.addEventListener("load", onPosterLoad);
+    poster.addEventListener("error", reveal);
+    poster.src = asset("home-107-poster.webp");
+    if (poster.complete) onPosterLoad();
+
+    return () => {
+      disposed = true;
+      poster.removeEventListener("load", onPosterLoad);
+      poster.removeEventListener("error", reveal);
+      window.clearTimeout(safetyTimer);
+      window.clearTimeout(revealTimer);
+      window.clearTimeout(removeTimer);
+    };
+  }, []);
 
   useEffect(() => {
     document.body.style.overflow = activeProject ? "hidden" : "";

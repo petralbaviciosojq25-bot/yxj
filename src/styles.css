@@ -89,7 +89,10 @@ button { font: inherit; }
   height: 100%;
   object-fit: contain;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 450ms ease;
 }
+.hero-motion.is-ready { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
   .hero-motion { display: none; }
 }
