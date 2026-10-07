@@ -23,7 +23,7 @@ const otherProjects = [
     src: asset("other-project-5.png"),
     video: asset("other-project-5-full.mp4"),
     index: "05",
-    title: "搭子成品",
+    title: "测测你的旅行搭子H5",
     type: "video",
   },
   {
@@ -36,7 +36,7 @@ const otherProjects = [
     src: asset("other-project-7.png"),
     video: asset("other-project-7-full.mp4"),
     index: "07",
-    title: "端午节成品",
+    title: "端午节KV",
     type: "video",
   },
   {
