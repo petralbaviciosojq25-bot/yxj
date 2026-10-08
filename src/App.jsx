@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { HairMotion } from "./HairMotion.jsx";
 import { PointerRipples } from "./PointerRipples.jsx";
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/${name}`;
@@ -126,7 +125,6 @@ function HeroArtwork({ onReady }) {
   return (
     <div className="hero-artwork">
       <img className="hero-art" src={heroPoster()} alt="Yara 视觉设计作品集：紫色机器人与 PORTFOLIO 标题" fetchPriority="high" decoding="async" onLoad={onReady} onError={onReady} />
-      <HairMotion source={heroPoster()} />
     </div>
   );
 }
