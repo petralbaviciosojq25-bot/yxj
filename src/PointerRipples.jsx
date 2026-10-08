@@ -13,7 +13,7 @@ export function PointerRipples() {
     let frame = 0;
     let previous = null;
     let head = null;
-    const lifetime = 650;
+    const lifetime = 450;
     const clear = () => {
       cancelAnimationFrame(frame);
       frame = 0;
@@ -30,13 +30,23 @@ export function PointerRipples() {
       canvas.height = Math.round(window.innerHeight * ratio);
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
     };
-    const glow = (x, y, radius, opacity) => {
-      const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
-      gradient.addColorStop(0, `rgba(205, 145, 255, ${opacity})`);
-      gradient.addColorStop(0.35, `rgba(164, 78, 245, ${opacity * 0.7})`);
-      gradient.addColorStop(1, "rgba(128, 40, 220, 0)");
-      context.fillStyle = gradient;
-      context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    const circle = (x, y, radius, opacity, outerGlow = false) => {
+      context.save();
+      context.fillStyle = `rgba(207, 177, 255, ${opacity})`;
+      if (outerGlow) {
+        context.shadowColor = "rgba(196, 150, 255, 0.35)";
+        context.shadowBlur = 5;
+      }
+      context.beginPath();
+      context.arc(x, y, radius, 0, Math.PI * 2);
+      context.fill();
+      if (outerGlow) {
+        context.shadowBlur = 0;
+        context.strokeStyle = "rgba(235, 220, 255, 0.65)";
+        context.lineWidth = 1;
+        context.stroke();
+      }
+      context.restore();
     };
     const draw = (now) => {
       frame = 0;
@@ -47,10 +57,10 @@ export function PointerRipples() {
         const distance = Math.hypot(point.x - head.x, point.y - head.y);
         const proximity = Math.max(0, 1 - distance / 240);
         const recency = (index + 1) / ripples.length;
-        glow(point.x, point.y, 14 + recency * 12,
-          0.12 * age ** 2 * proximity * recency);
+        circle(point.x, point.y, 5 + recency * 6,
+          0.045 * age ** 2 * proximity * recency);
       });
-      if (head) glow(head.x, head.y, 30, 0.46);
+      if (head) circle(head.x, head.y, 12, 0.5, true);
       if (ripples.length) frame = requestAnimationFrame(draw);
     };
     const move = (event) => {
