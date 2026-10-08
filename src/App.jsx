@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/${name}`;
 const heroPoster = () => asset(window.matchMedia("(max-width: 720px)").matches ? "home-107-poster-mobile.webp" : "home-107-poster.webp");
@@ -119,45 +119,62 @@ function ContactDetailPage({ type }) {
   );
 }
 
-function HeroArtwork() {
+function HeroArtwork({ onReady }) {
   const isMobile = window.matchMedia("(max-width: 720px)").matches;
   const preferStatic = window.matchMedia("(prefers-reduced-motion: reduce)").matches || navigator.connection?.saveData;
   const [videoReady, setVideoReady] = useState(false);
-  const [videoRequested, setVideoRequested] = useState(!isMobile && !preferStatic);
   const videoRef = useRef(null);
 
   useEffect(() => {
-    if (!isMobile || !videoRequested) return;
+    if (preferStatic) return undefined;
     const video = videoRef.current;
-    video?.play().catch(() => {});
-  }, [isMobile, videoRequested]);
+    let disposed = false;
+    const play = () => {
+      if (disposed || document.hidden) return;
+      video.muted = true;
+      video.play().catch(() => {
+        if (!disposed) { setVideoReady(false); onReady(); }
+      });
+    };
+    const resume = () => { if (!document.hidden && video.paused) play(); };
+    video.addEventListener("canplay", play);
+    document.addEventListener("visibilitychange", resume);
+    window.addEventListener("pageshow", resume);
+    window.addEventListener("pointerdown", resume, { passive: true });
+    window.addEventListener("keydown", resume);
+    play();
+    return () => {
+      disposed = true;
+      video.removeEventListener("canplay", play);
+      document.removeEventListener("visibilitychange", resume);
+      window.removeEventListener("pageshow", resume);
+      window.removeEventListener("pointerdown", resume);
+      window.removeEventListener("keydown", resume);
+    };
+  }, [preferStatic, onReady]);
 
   return (
     <div className="hero-artwork">
-      <img className="hero-art" src={heroPoster()} alt="紫色未来感角色作品集封面" fetchPriority="high" decoding="async" onLoad={() => { if (!preferStatic) setVideoRequested(true); }} />
-      <video
+      <img className="hero-art" src={heroPoster()} alt="紫色未来感角色作品集封面" fetchPriority="high" decoding="async" onLoad={() => { if (preferStatic) onReady(); }} onError={onReady} />
+      {!preferStatic && <video
         ref={videoRef}
         className={videoReady ? "hero-motion is-ready" : "hero-motion"}
-        src={videoRequested ? asset(isMobile ? "home-107-mobile.mp4" : "home-107.mp4") : undefined}
+        src={asset(isMobile ? "home-107-mobile.mp4" : "home-107.mp4")}
         poster={heroPoster()}
         aria-hidden="true"
-        onLoadedData={() => setVideoReady(true)}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-      />
+        onPlaying={() => { setVideoReady(true); onReady(); }}
+        onWaiting={() => setVideoReady(false)}
+        onError={() => { setVideoReady(false); onReady(); }}
+        autoPlay muted loop playsInline preload="auto"
+      />}
     </div>
   );
 }
 
-function HeroSection() {
+function HeroSection({ onReady }) {
   return (
     <section id="home" className="hero-transition" aria-label="首页">
-      <div className="hero">
-        <HeroArtwork />
-      </div>
+      <div className="hero"><HeroArtwork onReady={onReady} /></div>
     </section>
   );
 }
@@ -252,7 +269,7 @@ function ProjectShowcase({ onOpen }) {
         setCoversReady(true);
         observer.disconnect();
       }
-    }, { rootMargin: "300px 0px" });
+    }, { rootMargin: "1600px 0px" });
     observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
@@ -324,7 +341,7 @@ function ProjectShowcase({ onOpen }) {
                 {coversReady ? (
                   <picture>
                     <source media="(max-width: 720px)" srcSet={project.mobileCover} type="image/webp" />
-                    <img src={project.cover} alt={`${project.title}封面`} loading="lazy" decoding="async" fetchPriority="low" />
+                    <img src={project.cover} alt={`${project.title}封面`} loading="eager" decoding="async" />
                   </picture>
                 ) : <span className="project-cover-placeholder" aria-hidden="true" />}
               </button>
@@ -371,49 +388,47 @@ function OtherProjects({ onOpen }) {
 function PortfolioApp() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeProject, setActiveProject] = useState(null);
+  const [heroReady, setHeroReady] = useState(false);
+  const markHeroReady = useCallback(() => setHeroReady(true), []);
 
   useEffect(() => {
     const overlay = document.getElementById("site-preloader");
     if (!overlay) return undefined;
 
-    const startedAt = performance.now();
-    const poster = new Image();
-    let revealed = false;
-    let disposed = false;
-    let revealTimer;
     let removeTimer;
-    let safetyTimer;
-
-    const reveal = () => {
-      if (disposed || revealed) return;
-      revealed = true;
-      window.clearTimeout(safetyTimer);
-      revealTimer = window.setTimeout(() => {
-        overlay.classList.add("is-hidden");
-        removeTimer = window.setTimeout(() => overlay.remove(), 650);
-      }, Math.max(0, 400 - (performance.now() - startedAt)));
-    };
-
-    const onPosterLoad = () => {
-      if (poster.decode) poster.decode().then(reveal, reveal);
-      else reveal();
-    };
-
-    safetyTimer = window.setTimeout(reveal, 7000);
-    poster.addEventListener("load", onPosterLoad);
-    poster.addEventListener("error", reveal);
-    poster.src = heroPoster();
-    if (poster.complete) onPosterLoad();
-
+    const revealTimer = window.setTimeout(() => {
+      overlay.classList.add("is-hidden");
+      removeTimer = window.setTimeout(() => overlay.remove(), 650);
+    }, heroReady ? 150 : 5000);
     return () => {
-      disposed = true;
-      poster.removeEventListener("load", onPosterLoad);
-      poster.removeEventListener("error", reveal);
-      window.clearTimeout(safetyTimer);
       window.clearTimeout(revealTimer);
       window.clearTimeout(removeTimer);
     };
-  }, []);
+  }, [heroReady]);
+
+  // Warm the next sections in small batches without competing with the hero.
+  useEffect(() => {
+    const mobile = window.matchMedia("(max-width: 720px)").matches;
+    const queue = [
+      asset(mobile ? "photo-portrait-left-mobile.webp" : "photo-portrait-left.jpg"),
+      asset(mobile ? "photo-portrait-2-mobile.webp" : "photo-portrait-2.webp"),
+      ...projects.map((project) => mobile ? project.mobileCover : project.cover),
+      ...otherProjects.map((project) => project.src),
+    ];
+    let disposed = false;
+    const warm = async () => {
+      while (!disposed && queue.length) {
+        await Promise.all(queue.splice(0, 2).map((src) => new Promise((resolve) => {
+          const image = new Image();
+          image.fetchPriority = "low";
+          image.onload = image.onerror = resolve;
+          image.src = src;
+        })));
+      }
+    };
+    const timer = window.setTimeout(warm, heroReady ? 0 : 1500);
+    return () => { disposed = true; window.clearTimeout(timer); };
+  }, [heroReady]);
 
   useEffect(() => {
     document.body.style.overflow = activeProject ? "hidden" : "";
@@ -456,7 +471,7 @@ function PortfolioApp() {
         </button>
       </header>
 
-      <HeroSection />
+      <HeroSection onReady={markHeroReady} />
 
       <AboutSection />
 
