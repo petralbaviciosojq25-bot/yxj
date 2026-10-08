@@ -13,7 +13,7 @@ export function PointerRipples() {
     let frame = 0;
     let previous = null;
     let head = null;
-    const lifetime = 550;
+    const lifetime = 850;
     const clear = () => {
       cancelAnimationFrame(frame);
       frame = 0;
@@ -34,8 +34,8 @@ export function PointerRipples() {
       context.save();
       context.fillStyle = `rgba(180, 105, 255, ${opacity})`;
       if (outerGlow) {
-        context.shadowColor = "rgba(169, 82, 255, 0.55)";
-        context.shadowBlur = 7;
+        context.shadowColor = "rgba(169, 82, 255, 0.8)";
+        context.shadowBlur = 12;
       }
       context.beginPath();
       context.arc(x, y, radius, 0, Math.PI * 2);
@@ -55,12 +55,12 @@ export function PointerRipples() {
       ripples.forEach((point, index) => {
         const age = Math.max(0, 1 - (now - point.time) / lifetime);
         const distance = Math.hypot(point.x - head.x, point.y - head.y);
-        const proximity = Math.max(0, 1 - distance / 240);
+        const proximity = Math.max(0, 1 - distance / 360);
         const recency = (index + 1) / ripples.length;
-        circle(point.x, point.y, 5 + recency * 6,
-          0.1 * age ** 1.7 * proximity * recency);
+        circle(point.x, point.y, 3 + recency * 5,
+          0.035 * age ** 1.5 * proximity * recency);
       });
-      if (head) circle(head.x, head.y, 12, 0.65, true);
+      if (head) circle(head.x, head.y, 8, 0.65, true);
       if (ripples.length) frame = requestAnimationFrame(draw);
     };
     const move = (event) => {
@@ -81,7 +81,7 @@ export function PointerRipples() {
         }
       }
       previous = head;
-      ripples = ripples.slice(-40);
+      ripples = ripples.slice(-70);
       if (!frame) frame = requestAnimationFrame(draw);
     };
     resize();
