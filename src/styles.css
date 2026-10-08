@@ -665,6 +665,8 @@ button { font: inherit; }
 }
 
 .pointer-ripples { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
-@media (prefers-reduced-motion: reduce), (any-pointer: coarse) {
+@media (prefers-reduced-motion: reduce), (any-pointer: none) {
   .pointer-ripples { display: none; }
 }
+
+html.pointer-glow-active, html.pointer-glow-active * { cursor: none !important; }
