@@ -13,7 +13,7 @@ export function PointerRipples() {
     let frame = 0;
     let previous = null;
     let head = null;
-    const lifetime = 850;
+    const lifetime = 650;
     const clear = () => {
       cancelAnimationFrame(frame);
       frame = 0;
@@ -52,13 +52,13 @@ export function PointerRipples() {
       frame = 0;
       context.clearRect(0, 0, window.innerWidth, window.innerHeight);
       ripples = ripples.filter((point) => now - point.time < lifetime);
-      ripples.forEach((point, index) => {
-        const age = Math.max(0, 1 - (now - point.time) / lifetime);
-        const distance = Math.hypot(point.x - head.x, point.y - head.y);
-        const proximity = Math.max(0, 1 - distance / 360);
-        const recency = (index + 1) / ripples.length;
-        circle(point.x, point.y, 3 + recency * 5,
-          0.035 * age ** 1.5 * proximity * recency);
+      ripples.forEach((point) => {
+        const progress = (now - point.time) / lifetime;
+        context.strokeStyle = `rgba(190, 120, 255, ${0.5 * (1 - progress) ** 2})`;
+        context.lineWidth = 1.2;
+        context.beginPath();
+        context.arc(point.x, point.y, 8 + progress * 30, 0, Math.PI * 2);
+        context.stroke();
       });
       if (head) circle(head.x, head.y, 8, 0.65, true);
       if (ripples.length) frame = requestAnimationFrame(draw);
@@ -68,20 +68,12 @@ export function PointerRipples() {
       const now = performance.now();
       head = { x: event.clientX, y: event.clientY, time: now };
       document.documentElement.classList.add("pointer-glow-active");
-      if (previous) {
-        const distance = Math.hypot(head.x - previous.x, head.y - previous.y);
-        const steps = Math.min(Math.ceil(distance / 8), 30);
-        for (let step = 0; step < steps; step += 1) {
-          const fraction = step / steps;
-          ripples.push({
-            x: previous.x + (head.x - previous.x) * fraction,
-            y: previous.y + (head.y - previous.y) * fraction,
-            time: now,
-          });
-        }
+      if (!previous || (now - previous.time >= 65
+        && Math.hypot(head.x - previous.x, head.y - previous.y) >= 8)) {
+        ripples.push(head);
+        previous = head;
+        ripples = ripples.slice(-12);
       }
-      previous = head;
-      ripples = ripples.slice(-70);
       if (!frame) frame = requestAnimationFrame(draw);
     };
     resize();
