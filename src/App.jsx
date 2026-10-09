@@ -125,11 +125,12 @@ function HeroArtwork({ onReady }) {
   const isMobile = window.matchMedia("(max-width: 720px)").matches;
   const preferStatic = window.matchMedia("(prefers-reduced-motion: reduce)").matches || navigator.connection?.saveData;
   const [videoReady, setVideoReady] = useState(false);
+  const [posterReady, setPosterReady] = useState(false);
   const videoRefs = useRef([]);
   const source = asset(isMobile ? "home-109-clean-mobile.mp4" : "home-109-clean.mp4");
 
   useEffect(() => {
-    if (preferStatic) return undefined;
+    if (preferStatic || !posterReady) return undefined;
     const videos = [...videoRefs.current];
     let active = 0;
     let transitioning = false;
@@ -149,11 +150,7 @@ function HeroArtwork({ onReady }) {
       if (disposed) return;
       setVideoReady(true);
       onReady();
-      // Prepare the next pass after the first has started; retain original media.
-      if (!videos[1].getAttribute("src")) {
-        videos[1].src = source;
-        videos[1].load();
-      }
+
     };
     const nativeFallback = () => {
       transitioning = false;
@@ -167,6 +164,12 @@ function HeroArtwork({ onReady }) {
       if (disposed) return;
       const current = videos[active];
       const next = videos[1 - active];
+      // Reuse the fully buffered main resource before preparing a second decoder.
+      if (!next.getAttribute("src") && Number.isFinite(current.duration)
+        && current.buffered.length && current.buffered.end(current.buffered.length - 1) >= current.duration - 0.1) {
+        next.src = source;
+        next.load();
+      }
       if (!document.hidden && !fallback) {
         if (!transitioning && !current.paused && current.duration > 0
           && current.duration - current.currentTime <= 0.5 && next.readyState >= 2) {
@@ -227,20 +230,24 @@ function HeroArtwork({ onReady }) {
       window.removeEventListener("pointerdown", interact);
       window.removeEventListener("keydown", interact);
     };
-  }, [preferStatic, source, onReady]);
+  }, [preferStatic, posterReady, source, onReady]);
 
   return (
     <div className="hero-artwork">
-      <img className="hero-art" src={heroPoster()} alt="紫色未来感角色作品集封面" fetchPriority="high" decoding="async" onLoad={() => { if (preferStatic) onReady(); }} onError={onReady} />
+      <img className="hero-art" src={heroPoster()} alt="紫色未来感角色作品集封面" fetchPriority="high" decoding="async" onLoad={async (event) => {
+        try { await event.currentTarget.decode(); } catch { /* Loaded image can still render. */ }
+        setPosterReady(true);
+        onReady();
+      }} onError={() => { setPosterReady(true); onReady(); }} />
       {!preferStatic && <div className={videoReady ? "hero-motion is-ready" : "hero-motion"} aria-hidden="true">
         {[0, 1].map((index) => <video
           key={index}
           ref={(video) => { videoRefs.current[index] = video; }}
           className="hero-loop-video"
-          src={index === 0 ? source : undefined}
+          src={index === 0 && posterReady ? source : undefined}
           poster={heroPoster()}
           onError={onReady}
-          muted playsInline preload="auto"
+          muted playsInline preload={posterReady ? "auto" : "none"}
         />)}
       </div>}
       <span className="hero-caption">视觉设计作品集</span>
@@ -346,7 +353,7 @@ function ProjectShowcase({ onOpen }) {
         setCoversReady(true);
         observer.disconnect();
       }
-    }, { rootMargin: "1600px 0px" });
+    }, { rootMargin: "600px 0px" });
     observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
@@ -476,7 +483,7 @@ function PortfolioApp() {
     const revealTimer = window.setTimeout(() => {
       overlay.classList.add("is-hidden");
       removeTimer = window.setTimeout(() => overlay.remove(), 650);
-    }, heroReady ? 150 : 5000);
+    }, heroReady ? 100 : 2500);
     return () => {
       window.clearTimeout(revealTimer);
       window.clearTimeout(removeTimer);
@@ -485,12 +492,12 @@ function PortfolioApp() {
 
   // Warm the next sections in small batches without competing with the hero.
   useEffect(() => {
+    if (!heroReady || navigator.connection?.saveData) return undefined;
     const mobile = window.matchMedia("(max-width: 720px)").matches;
     const queue = [
       asset(mobile ? "photo-portrait-left-mobile.webp" : "photo-portrait-left.jpg"),
       asset(mobile ? "photo-portrait-2-mobile.webp" : "photo-portrait-2.webp"),
-      ...projects.map((project) => mobile ? project.mobileCover : project.cover),
-      ...otherProjects.map((project) => project.src),
+      mobile ? projects[0].mobileCover : projects[0].cover,
     ];
     let disposed = false;
     const warm = async () => {
@@ -503,7 +510,7 @@ function PortfolioApp() {
         })));
       }
     };
-    const timer = window.setTimeout(warm, heroReady ? 0 : 1500);
+    const timer = window.setTimeout(warm, 3500);
     return () => { disposed = true; window.clearTimeout(timer); };
   }, [heroReady]);
 
