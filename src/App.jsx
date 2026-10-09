@@ -122,9 +122,127 @@ function ContactDetailPage({ type }) {
 }
 
 function HeroArtwork({ onReady }) {
+  const isMobile = window.matchMedia("(max-width: 720px)").matches;
+  const preferStatic = window.matchMedia("(prefers-reduced-motion: reduce)").matches || navigator.connection?.saveData;
+  const [videoReady, setVideoReady] = useState(false);
+  const videoRefs = useRef([]);
+  const source = asset(isMobile ? "home-109-clean-mobile.mp4" : "home-109-clean.mp4");
+
+  useEffect(() => {
+    if (preferStatic) return undefined;
+    const videos = [...videoRefs.current];
+    let active = 0;
+    let transitioning = false;
+    let disposed = false;
+    let frame;
+    let fallback = false;
+    const blendDuration = 0.35;
+    const showActive = () => videos.forEach((video, index) => {
+      video.style.opacity = index === active ? "1" : "0";
+      video.style.zIndex = index === active ? "1" : "0";
+    });
+    const play = (video) => {
+      video.muted = true;
+      return video.play();
+    };
+    const ready = () => {
+      if (disposed) return;
+      setVideoReady(true);
+      onReady();
+      // Prepare the next pass after the first has started; retain original media.
+      if (!videos[1].getAttribute("src")) {
+        videos[1].src = source;
+        videos[1].load();
+      }
+    };
+    const nativeFallback = () => {
+      transitioning = false;
+      fallback = true;
+      videos[1 - active].pause();
+      videos[active].loop = true;
+      showActive();
+      if (videos[active].ended) play(videos[active]).catch(onReady);
+    };
+    const tick = () => {
+      if (disposed) return;
+      const current = videos[active];
+      const next = videos[1 - active];
+      if (!document.hidden && !fallback) {
+        if (!transitioning && !current.paused && current.duration > 0
+          && current.duration - current.currentTime <= 0.5 && next.readyState >= 2) {
+          transitioning = true;
+          next.currentTime = 0;
+          next.style.zIndex = "2";
+          next.style.opacity = "0";
+          play(next).catch(() => { if (!disposed) nativeFallback(); });
+        }
+        if (transitioning && next.readyState >= 2 && next.currentTime > 0) {
+          // Incoming playback time keeps the blend aligned with decoded frames.
+          const progress = Math.min(next.currentTime / blendDuration, 1);
+          next.style.opacity = String(progress * progress * (3 - 2 * progress));
+          if (progress === 1) {
+            current.pause();
+            active = 1 - active;
+            transitioning = false;
+            showActive();
+            current.currentTime = 0;
+          }
+        }
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    const ended = (event) => {
+      if (event.currentTarget === videos[active] && !transitioning) nativeFallback();
+    };
+    const resume = () => {
+      if (document.hidden) {
+        videos.forEach((video) => video.pause());
+      } else {
+        play(videos[active]).catch(onReady);
+        if (transitioning) play(videos[1 - active]).catch(nativeFallback);
+      }
+    };
+    const interact = () => { if (!document.hidden && videos[active].paused) resume(); };
+    videos.forEach((video) => {
+      video.addEventListener("playing", ready);
+      video.addEventListener("ended", ended);
+    });
+    showActive();
+    play(videos[active]).catch(onReady);
+    frame = requestAnimationFrame(tick);
+    document.addEventListener("visibilitychange", resume);
+    window.addEventListener("pageshow", resume);
+    window.addEventListener("pointerdown", interact, { passive: true });
+    window.addEventListener("keydown", interact);
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(frame);
+      videos.forEach((video) => {
+        video.pause();
+        video.removeEventListener("playing", ready);
+        video.removeEventListener("ended", ended);
+      });
+      document.removeEventListener("visibilitychange", resume);
+      window.removeEventListener("pageshow", resume);
+      window.removeEventListener("pointerdown", interact);
+      window.removeEventListener("keydown", interact);
+    };
+  }, [preferStatic, source, onReady]);
+
   return (
     <div className="hero-artwork">
-      <img className="hero-art" src={heroPoster()} alt="Yara 视觉设计作品集：紫色机器人与 PORTFOLIO 标题" fetchPriority="high" decoding="async" onLoad={onReady} onError={onReady} />
+      <img className="hero-art" src={heroPoster()} alt="紫色未来感角色作品集封面" fetchPriority="high" decoding="async" onLoad={() => { if (preferStatic) onReady(); }} onError={onReady} />
+      {!preferStatic && <div className={videoReady ? "hero-motion is-ready" : "hero-motion"} aria-hidden="true">
+        {[0, 1].map((index) => <video
+          key={index}
+          ref={(video) => { videoRefs.current[index] = video; }}
+          className="hero-loop-video"
+          src={index === 0 ? source : undefined}
+          poster={heroPoster()}
+          onError={onReady}
+          muted playsInline preload="auto"
+        />)}
+      </div>}
     </div>
   );
 }
