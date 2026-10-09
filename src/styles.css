@@ -670,3 +670,26 @@ button { font: inherit; }
 }
 
 html.pointer-glow-active, html.pointer-glow-active * { cursor: none !important; }
+
+.hero-caption {
+  position: absolute;
+  z-index: 3;
+  left: 5.28%;
+  top: 67.1%;
+  width: 13%;
+  height: 5.55%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid #c9a9f4;
+  border-radius: 999px;
+  background: #090611;
+  color: #dbc1ff;
+  font-family: "Noto Sans CJK SC", "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-size: 1.3vw;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}

@@ -243,6 +243,7 @@ function HeroArtwork({ onReady }) {
           muted playsInline preload="auto"
         />)}
       </div>}
+      <span className="hero-caption">视觉设计作品集</span>
     </div>
   );
 }
