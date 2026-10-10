@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import imageAssets from "./imageAssets.json";
 import { ProjectImage } from "./ProjectImage.jsx";
-import { useBufferedVideo } from "./useBufferedVideo.js";
 import { PointerRipples } from "./PointerRipples.jsx";
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/${imageAssets.images[name] || name}`;
@@ -126,13 +125,11 @@ function ContactDetailPage({ type }) {
 
 function HeroArtwork({ onReady }) {
   const isMobile = window.matchMedia("(max-width: 720px)").matches;
-  const preferStatic = window.matchMedia("(prefers-reduced-motion: reduce)").matches || navigator.connection?.saveData;
+  const preferStatic = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const [videoReady, setVideoReady] = useState(false);
-  const [posterReady, setPosterReady] = useState(false);
   const videoRefs = useRef([]);
   const originalSource = asset(isMobile ? "home-109-clean-mobile.mp4" : "home-109-clean.mp4");
-  const buffered = useBufferedVideo(originalSource, posterReady && !preferStatic);
-  const source = buffered.url;
+  const source = originalSource;
   const artworkRef = useRef(null);
 
   useEffect(() => {
@@ -250,29 +247,21 @@ function HeroArtwork({ onReady }) {
       window.removeEventListener("pointerdown", interact);
       window.removeEventListener("keydown", interact);
     };
-  }, [preferStatic, posterReady, source, onReady]);
+  }, [preferStatic, source, onReady]);
 
   return (
     <div className="hero-artwork" ref={artworkRef}>
-      <img className="hero-art" src={heroPoster()} alt="紫色未来感角色作品集封面" fetchPriority="high" decoding="async" onLoad={async (event) => {
-        try { await event.currentTarget.decode(); } catch { /* Loaded image can still render. */ }
-        setPosterReady(true);
-        onReady();
-      }} onError={() => { setPosterReady(true); onReady(); }} />
+      {preferStatic && <img className="hero-art" src={heroPoster()} alt="紫色未来感角色作品集封面" decoding="async" onLoad={onReady} onError={onReady} />}
       {!preferStatic && <div className={videoReady ? "hero-motion is-ready" : "hero-motion"} aria-hidden="true">
         {[0, 1].map((index) => <video
           key={index}
           ref={(video) => { videoRefs.current[index] = video; }}
           className="hero-loop-video"
           src={index === 0 && source ? source : undefined}
-          poster={heroPoster()}
           onError={onReady}
-          muted playsInline preload={posterReady ? "auto" : "none"}
+          muted playsInline autoPlay={index === 0} preload={index === 0 ? "auto" : "none"}
         />)}
       </div>}
-      {!preferStatic && !videoReady && buffered.progress !== null && <span className="hero-video-loading" role="status">
-        视频准备中{buffered.progress > 0 ? ` ${buffered.progress}%` : ""}
-      </span>}
       <span className="hero-caption">视觉设计作品集</span>
     </div>
   );
@@ -376,7 +365,7 @@ function ProjectShowcase({ onOpen }) {
         setCoversReady(true);
         observer.disconnect();
       }
-    }, { rootMargin: "600px 0px" });
+    }, { rootMargin: "1600px 0px" });
     observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
@@ -506,7 +495,7 @@ function PortfolioApp() {
     const revealTimer = window.setTimeout(() => {
       overlay.classList.add("is-hidden");
       removeTimer = window.setTimeout(() => overlay.remove(), 650);
-    }, heroReady ? 100 : 2500);
+    }, heroReady ? 0 : 8000);
     return () => {
       window.clearTimeout(revealTimer);
       window.clearTimeout(removeTimer);
@@ -515,12 +504,12 @@ function PortfolioApp() {
 
   // Warm the next sections in small batches without competing with the hero.
   useEffect(() => {
-    if (!heroReady || navigator.connection?.saveData) return undefined;
+    if (!heroReady) return undefined;
     const mobile = window.matchMedia("(max-width: 720px)").matches;
     const queue = [
       asset(mobile ? "photo-portrait-left-mobile.webp" : "photo-portrait-left.jpg"),
       asset(mobile ? "photo-portrait-2-mobile.webp" : "photo-portrait-2.webp"),
-      mobile ? projects[0].mobileCover : projects[0].cover,
+      ...projects.map((project) => mobile ? project.mobileCover : project.cover),
     ];
     let disposed = false;
     const warm = async () => {
@@ -533,7 +522,7 @@ function PortfolioApp() {
         })));
       }
     };
-    const timer = window.setTimeout(warm, 3500);
+    const timer = window.setTimeout(warm, 500);
     return () => { disposed = true; window.clearTimeout(timer); };
   }, [heroReady]);
 
