@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import imageAssets from "./imageAssets.json";
+import { ProjectImage } from "./ProjectImage.jsx";
+import { useBufferedVideo } from "./useBufferedVideo.js";
 import { PointerRipples } from "./PointerRipples.jsx";
 
-const asset = (name) => `${import.meta.env.BASE_URL}assets/${name}`;
+const asset = (name) => `${import.meta.env.BASE_URL}assets/${imageAssets.images[name] || name}`;
 const heroPoster = () => asset("109.png");
 
 const projects = [
@@ -127,16 +130,20 @@ function HeroArtwork({ onReady }) {
   const [videoReady, setVideoReady] = useState(false);
   const [posterReady, setPosterReady] = useState(false);
   const videoRefs = useRef([]);
-  const source = asset(isMobile ? "home-109-clean-mobile.mp4" : "home-109-clean.mp4");
+  const originalSource = asset(isMobile ? "home-109-clean-mobile.mp4" : "home-109-clean.mp4");
+  const buffered = useBufferedVideo(originalSource, posterReady && !preferStatic);
+  const source = buffered.url;
+  const artworkRef = useRef(null);
 
   useEffect(() => {
-    if (preferStatic || !posterReady) return undefined;
+    if (preferStatic || !source) return undefined;
     const videos = [...videoRefs.current];
     let active = 0;
     let transitioning = false;
     let disposed = false;
     let frame;
     let fallback = false;
+    let inView = true;
     const blendDuration = 0.35;
     const showActive = () => videos.forEach((video, index) => {
       video.style.opacity = index === active ? "1" : "0";
@@ -156,6 +163,8 @@ function HeroArtwork({ onReady }) {
       transitioning = false;
       fallback = true;
       videos[1 - active].pause();
+      videos[1 - active].removeAttribute("src");
+      videos[1 - active].load();
       videos[active].loop = true;
       showActive();
       if (videos[active].ended) play(videos[active]).catch(onReady);
@@ -165,12 +174,12 @@ function HeroArtwork({ onReady }) {
       const current = videos[active];
       const next = videos[1 - active];
       // Reuse the fully buffered main resource before preparing a second decoder.
-      if (!next.getAttribute("src") && Number.isFinite(current.duration)
+      if (!fallback && !next.getAttribute("src") && Number.isFinite(current.duration)
         && current.buffered.length && current.buffered.end(current.buffered.length - 1) >= current.duration - 0.1) {
         next.src = source;
         next.load();
       }
-      if (!document.hidden && !fallback) {
+      if (!document.hidden && inView && !fallback) {
         if (!transitioning && !current.paused && current.duration > 0
           && current.duration - current.currentTime <= 0.5 && next.readyState >= 2) {
           transitioning = true;
@@ -179,6 +188,9 @@ function HeroArtwork({ onReady }) {
           next.style.opacity = "0";
           play(next).catch(() => { if (!disposed) nativeFallback(); });
         }
+        const quality = current.getVideoPlaybackQuality?.();
+        if (transitioning && quality?.totalVideoFrames > 120
+          && quality.droppedVideoFrames / quality.totalVideoFrames > 0.1) nativeFallback();
         if (transitioning && next.readyState >= 2 && next.currentTime > 0) {
           // Incoming playback time keeps the blend aligned with decoded frames.
           const progress = Math.min(next.currentTime / blendDuration, 1);
@@ -192,20 +204,27 @@ function HeroArtwork({ onReady }) {
           }
         }
       }
-      frame = requestAnimationFrame(tick);
+      if (!document.hidden && inView) frame = requestAnimationFrame(tick);
     };
     const ended = (event) => {
       if (event.currentTarget === videos[active] && !transitioning) nativeFallback();
     };
     const resume = () => {
-      if (document.hidden) {
+      cancelAnimationFrame(frame);
+      if (document.hidden || !inView) {
         videos.forEach((video) => video.pause());
       } else {
+        frame = requestAnimationFrame(tick);
         play(videos[active]).catch(onReady);
         if (transitioning) play(videos[1 - active]).catch(nativeFallback);
       }
     };
-    const interact = () => { if (!document.hidden && videos[active].paused) resume(); };
+    const interact = () => { if (!document.hidden && inView && videos[active].paused) resume(); };
+    const observer = new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting;
+      resume();
+    }, { rootMargin: "100px" });
+    observer.observe(artworkRef.current);
     videos.forEach((video) => {
       video.addEventListener("playing", ready);
       video.addEventListener("ended", ended);
@@ -219,6 +238,7 @@ function HeroArtwork({ onReady }) {
     window.addEventListener("keydown", interact);
     return () => {
       disposed = true;
+      observer.disconnect();
       cancelAnimationFrame(frame);
       videos.forEach((video) => {
         video.pause();
@@ -233,7 +253,7 @@ function HeroArtwork({ onReady }) {
   }, [preferStatic, posterReady, source, onReady]);
 
   return (
-    <div className="hero-artwork">
+    <div className="hero-artwork" ref={artworkRef}>
       <img className="hero-art" src={heroPoster()} alt="紫色未来感角色作品集封面" fetchPriority="high" decoding="async" onLoad={async (event) => {
         try { await event.currentTarget.decode(); } catch { /* Loaded image can still render. */ }
         setPosterReady(true);
@@ -244,12 +264,15 @@ function HeroArtwork({ onReady }) {
           key={index}
           ref={(video) => { videoRefs.current[index] = video; }}
           className="hero-loop-video"
-          src={index === 0 && posterReady ? source : undefined}
+          src={index === 0 && source ? source : undefined}
           poster={heroPoster()}
           onError={onReady}
           muted playsInline preload={posterReady ? "auto" : "none"}
         />)}
       </div>}
+      {!preferStatic && !videoReady && buffered.progress !== null && <span className="hero-video-loading" role="status">
+        视频准备中{buffered.progress > 0 ? ` ${buffered.progress}%` : ""}
+      </span>}
       <span className="hero-caption">视觉设计作品集</span>
     </div>
   );
@@ -590,7 +613,7 @@ function PortfolioApp() {
                   当前浏览器不支持视频播放。
                 </video>
               ) : (
-                <img src={activeProject.detail || activeProject.preview || activeProject.src} alt={`${activeProject.title || `其他项目 ${activeProject.index}`}完整长图`} />
+                <ProjectImage src={activeProject.detail || activeProject.preview || activeProject.src} alt={`${activeProject.title || `其他项目 ${activeProject.index}`}完整长图`} />
               )}
             </div>
           </div>

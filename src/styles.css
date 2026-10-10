@@ -693,3 +693,8 @@ html.pointer-glow-active, html.pointer-glow-active * { cursor: none !important; 
   white-space: nowrap;
   pointer-events: none;
 }
+
+.hero-video-loading { position: absolute; right: 2%; bottom: 2%; z-index: 4; padding: 6px 10px; border-radius: 20px; background: rgba(9,6,17,.7); color: #e4d3ff; font-size: 12px; pointer-events: none; }
+.project-image-tiles { width: min(82%, 720px); margin: 0 auto; }
+.modal-scroll .project-image-tiles img { width: 100%; margin: 0; }
+@media (max-width: 720px) { .project-image-tiles { width: 90%; } }
