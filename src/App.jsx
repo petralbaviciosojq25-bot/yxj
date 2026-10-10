@@ -6,7 +6,7 @@ const asset = (name) => `${import.meta.env.BASE_URL}assets/${name}`;
 const heroPoster = () => asset("109.png");
 
 const projects = [
-  { cover: asset("project-cover-1.webp?v=20261008b"), mobileCover: asset("project-cover-1-mobile.webp?v=20261008b"), src: asset("project-kv.webp"), index: "01", title: "运营 KV", full: true },
+  { cover: asset("project-cover-1.webp?v=20261008b"), mobileCover: asset("project-cover-1-mobile.webp?v=20261008b"), src: asset("project-kv-20261010.webp"), index: "01", title: "运营 KV", full: true },
   { cover: asset("project-cover-2.webp?v=20261008b"), mobileCover: asset("project-cover-2-mobile.webp?v=20261008b"), src: asset("project-brand.webp"), index: "02", title: "品牌活动", full: true },
   { cover: asset("project-cover-3.webp?v=20261008b"), mobileCover: asset("project-cover-3-mobile.webp?v=20261008b"), src: asset("project-ip.webp"), index: "03", title: "IP 设计", full: true },
   { cover: asset("project-cover-4.webp?v=20261008b"), mobileCover: asset("project-cover-4-mobile.webp?v=20261008b"), src: asset("project-play.webp"), index: "04", title: "玩法活动", full: true },
