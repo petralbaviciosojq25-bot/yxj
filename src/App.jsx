@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import imageAssets from "./imageAssets.json";
 import { ProjectImage } from "./ProjectImage.jsx";
-import { useBufferedVideo } from "./useBufferedVideo.js";
 import { PointerRipples } from "./PointerRipples.jsx";
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/${imageAssets.images[name] || name}`;
@@ -126,159 +125,119 @@ function ContactDetailPage({ type }) {
 
 function HeroArtwork({ onReady }) {
   const isMobile = window.matchMedia("(max-width: 720px)").matches;
-  const preferStatic = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const [allowMotion, setAllowMotion] = useState(false);
+  const preferStatic = window.matchMedia("(prefers-reduced-motion: reduce)").matches && !allowMotion;
+  const filename = isMobile ? "home-109-clean-mobile.mp4" : "home-109-clean.mp4";
+  const sources = [
+    asset(filename),
+    "progressive-stream",
+    `https://raw.githubusercontent.com/petralbaviciosojq25-bot/yxj/640e411be1b410f064fd7c2086d32fdfbed0180e/public/assets/${filename}`,
+  ];
+  const [route, setRoute] = useState(0);
+  const [attempt, setAttempt] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
-  const videoRefs = useRef([]);
-  const originalSource = asset(isMobile ? "home-109-clean-mobile.mp4" : "home-109-clean.mp4");
-  const buffered = useBufferedVideo(originalSource, !preferStatic);
-  const source = buffered.url;
-  const [playbackError, setPlaybackError] = useState(false);
-  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+  const [status, setStatus] = useState("loading");
+  const videoRef = useRef(null);
   const artworkRef = useRef(null);
+  const source = sources[route];
 
   useEffect(() => {
-    if (preferStatic || !source) return undefined;
-    setVideoReady(false);
-    setPlaybackError(false);
-    setAutoplayBlocked(false);
-    const videos = [...videoRefs.current];
-    let active = 0;
-    let transitioning = false;
+    if (preferStatic) return undefined;
+    const video = videoRef.current;
     let disposed = false;
-    let frame;
-    let fallback = false;
     let inView = true;
-    const blendDuration = 0.35;
-    const showActive = () => videos.forEach((video, index) => {
-      video.style.opacity = index === active ? "1" : "0";
-      video.style.zIndex = index === active ? "1" : "0";
-    });
-    const play = (video) => {
+    let lastProgress = performance.now();
+    let lastTime = -1;
+    let lastBuffer = -1;
+    let failed = false;
+    setVideoReady(false);
+    setStatus("loading");
+    const play = () => {
+      if (disposed || failed || document.hidden || !inView) return;
       video.muted = true;
-      return video.play().catch((error) => {
-        if (!disposed && error.name === "NotAllowedError") setAutoplayBlocked(true);
-        throw error;
+      video.play().catch((error) => {
+        if (!disposed && error.name === "NotAllowedError") setStatus("blocked");
       });
     };
-    const ready = () => {
+    const fail = () => {
+      if (disposed || failed) return;
+      failed = true;
+      if (route < 2) setRoute(route + 1);
+      else setStatus("error");
+    };
+    const playing = () => {
       if (disposed) return;
+      lastProgress = performance.now();
       setVideoReady(true);
-      setAutoplayBlocked(false);
+      setStatus("playing");
       onReady();
-
     };
-    const nativeFallback = () => {
-      transitioning = false;
-      fallback = true;
-      videos[1 - active].pause();
-      videos[1 - active].removeAttribute("src");
-      videos[1 - active].load();
-      videos[active].loop = true;
-      showActive();
-      if (videos[active].ended) play(videos[active]).catch(onReady);
-    };
-    const tick = () => {
-      if (disposed) return;
-      const current = videos[active];
-      const next = videos[1 - active];
-      // Reuse the fully buffered main resource before preparing a second decoder.
-      if (!fallback && !next.getAttribute("src") && Number.isFinite(current.duration)
-        && current.buffered.length && current.buffered.end(current.buffered.length - 1) >= current.duration - 0.1) {
-        next.src = source;
-        next.load();
-      }
-      if (!document.hidden && inView && !fallback) {
-        if (!transitioning && !current.paused && current.duration > 0
-          && current.duration - current.currentTime <= 0.5 && next.readyState >= 2) {
-          transitioning = true;
-          next.currentTime = 0;
-          next.style.zIndex = "2";
-          next.style.opacity = "0";
-          play(next).catch(() => { if (!disposed) nativeFallback(); });
-        }
-        const quality = current.getVideoPlaybackQuality?.();
-        if (transitioning && quality?.totalVideoFrames > 120
-          && quality.droppedVideoFrames / quality.totalVideoFrames > 0.1) nativeFallback();
-        if (transitioning && next.readyState >= 2 && next.currentTime > 0) {
-          // Incoming playback time keeps the blend aligned with decoded frames.
-          const progress = Math.min(next.currentTime / blendDuration, 1);
-          next.style.opacity = String(progress * progress * (3 - 2 * progress));
-          if (progress === 1) {
-            current.pause();
-            active = 1 - active;
-            transitioning = false;
-            showActive();
-            current.currentTime = 0;
-          }
-        }
-      }
-      if (!document.hidden && inView) frame = requestAnimationFrame(tick);
-    };
-    const ended = (event) => {
-      if (event.currentTarget === videos[active] && !transitioning) nativeFallback();
-    };
+    const waiting = () => { if (!disposed && !failed) setStatus("loading"); };
     const resume = () => {
-      cancelAnimationFrame(frame);
-      if (document.hidden || !inView) {
-        videos.forEach((video) => video.pause());
-      } else {
-        frame = requestAnimationFrame(tick);
-        play(videos[active]).catch(onReady);
-        if (transitioning) play(videos[1 - active]).catch(nativeFallback);
-      }
+      lastProgress = performance.now();
+      if (document.hidden || !inView) video.pause();
+      else play();
     };
-    const interact = () => { if (!document.hidden && inView && videos[active].paused) resume(); };
     const observer = new IntersectionObserver(([entry]) => {
       inView = entry.isIntersecting;
       resume();
     }, { rootMargin: "100px" });
     observer.observe(artworkRef.current);
-    videos.forEach((video) => {
-      video.addEventListener("playing", ready);
-      video.addEventListener("ended", ended);
-    });
-    showActive();
-    play(videos[active]).catch(onReady);
-    frame = requestAnimationFrame(tick);
+    // Switch only after actual buffering/playback has stopped making progress.
+    const watchdog = window.setInterval(() => {
+      if (disposed || failed || document.hidden || !inView) return;
+      const bufferedEnd = video.buffered.length ? video.buffered.end(video.buffered.length - 1) : 0;
+      if (video.currentTime !== lastTime || bufferedEnd !== lastBuffer) {
+        lastProgress = performance.now();
+        lastTime = video.currentTime;
+        lastBuffer = bufferedEnd;
+      } else if (video.readyState < 3 && performance.now() - lastProgress > (route === 1 ? 25000 : 12000)) fail();
+    }, 1000);
+    video.addEventListener("playing", playing);
+    video.addEventListener("waiting", waiting);
+    video.addEventListener("error", fail);
+    video.addEventListener("canplay", play);
     document.addEventListener("visibilitychange", resume);
     window.addEventListener("pageshow", resume);
-    window.addEventListener("pointerdown", interact, { passive: true });
-    window.addEventListener("keydown", interact);
+    let stopStream;
+    if (route === 1) {
+      import("./streamOriginalVideo.js").then(({ streamOriginalVideo }) => {
+        if (!disposed) stopStream = streamOriginalVideo(video, filename, fail);
+      }).catch(fail);
+    } else {
+      video.load();
+      play();
+    }
     return () => {
       disposed = true;
+      window.clearInterval(watchdog);
       observer.disconnect();
-      cancelAnimationFrame(frame);
-      videos.forEach((video) => {
-        video.pause();
-        video.removeEventListener("playing", ready);
-        video.removeEventListener("ended", ended);
-      });
+      video.pause();
+      stopStream?.();
+      video.removeEventListener("playing", playing);
+      video.removeEventListener("waiting", waiting);
+      video.removeEventListener("error", fail);
+      video.removeEventListener("canplay", play);
       document.removeEventListener("visibilitychange", resume);
       window.removeEventListener("pageshow", resume);
-      window.removeEventListener("pointerdown", interact);
-      window.removeEventListener("keydown", interact);
     };
-  }, [preferStatic, source, onReady]);
+  }, [preferStatic, source, route, attempt, onReady]);
 
+  const retry = () => { setRoute(0); setAttempt((value) => value + 1); };
+  const manualPlay = () => {
+    videoRef.current?.play().catch(() => setStatus("blocked"));
+  };
   return (
     <div className="hero-artwork" ref={artworkRef}>
       <img className="hero-art" src={heroPoster()} alt="紫色未来感角色作品集封面" fetchPriority="high" decoding="async" onLoad={onReady} onError={onReady} />
       {!preferStatic && <div className={videoReady ? "hero-motion is-ready" : "hero-motion"} aria-hidden="true">
-        {[0, 1].map((index) => <video
-          key={index}
-          ref={(video) => { videoRefs.current[index] = video; }}
-          className="hero-loop-video"
-          src={index === 0 && source ? source : undefined}
-          onError={(event) => { if (event.currentTarget.getAttribute("src")) setPlaybackError(true); }}
-          muted playsInline autoPlay={index === 0} preload={index === 0 ? "auto" : "none"}
-        />)}
+        <video ref={videoRef} className="hero-loop-video" src={route === 1 ? undefined : source} poster={heroPoster()} muted playsInline loop preload="auto" />
       </div>}
-      {!preferStatic && (!videoReady || playbackError) && <span className="hero-video-loading" role="status">
-        {buffered.error || playbackError ? "视频加载失败，请重试" : autoplayBlocked ? "点击播放视频" : `视频准备中 ${buffered.progress}%`}
-        {(buffered.error || playbackError) && <button type="button" onClick={() => { setVideoReady(false); setPlaybackError(false); buffered.retry(); }}>重试</button>}
-        {autoplayBlocked && !buffered.error && !playbackError && <button type="button" onClick={() => {
-          videoRefs.current.find((video) => video.getAttribute("src"))?.play().catch(() => setAutoplayBlocked(true));
-        }}>播放</button>}
+      {(preferStatic || status !== "playing") && <span className="hero-video-loading" role="status">
+        {preferStatic ? "动态播放已暂停" : status === "error" ? "视频加载失败，请重试" : status === "blocked" ? "点击播放视频" : "视频准备中"}
+        {preferStatic ? <button type="button" onClick={() => setAllowMotion(true)}>播放视频</button>
+          : status === "error" ? <button type="button" onClick={retry}>重试</button>
+          : <button type="button" onClick={manualPlay}>播放</button>}
       </span>}
       <span className="hero-caption">视觉设计作品集</span>
     </div>

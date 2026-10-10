@@ -1,0 +1,34 @@
+{
+  "home-109-clean.mp4": {
+    "codec": "avc1.640034",
+    "init": "video-stream/home-109-clean-init.mp4",
+    "segments": [
+      "video-stream/home-109-clean-00.m4s",
+      "video-stream/home-109-clean-01.m4s",
+      "video-stream/home-109-clean-02.m4s",
+      "video-stream/home-109-clean-03.m4s",
+      "video-stream/home-109-clean-04.m4s",
+      "video-stream/home-109-clean-05.m4s",
+      "video-stream/home-109-clean-06.m4s",
+      "video-stream/home-109-clean-07.m4s",
+      "video-stream/home-109-clean-08.m4s"
+    ],
+    "startTime": 0.08333333333333333
+  },
+  "home-109-clean-mobile.mp4": {
+    "codec": "avc1.64002a",
+    "init": "video-stream/home-109-clean-mobile-init.mp4",
+    "segments": [
+      "video-stream/home-109-clean-mobile-00.m4s",
+      "video-stream/home-109-clean-mobile-01.m4s",
+      "video-stream/home-109-clean-mobile-02.m4s",
+      "video-stream/home-109-clean-mobile-03.m4s",
+      "video-stream/home-109-clean-mobile-04.m4s",
+      "video-stream/home-109-clean-mobile-05.m4s",
+      "video-stream/home-109-clean-mobile-06.m4s",
+      "video-stream/home-109-clean-mobile-07.m4s",
+      "video-stream/home-109-clean-mobile-08.m4s"
+    ],
+    "startTime": 0.08333333333333333
+  }
+}

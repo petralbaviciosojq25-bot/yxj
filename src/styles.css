@@ -94,9 +94,6 @@ button { font: inherit; }
 }
 .hero-motion.is-ready { opacity: 1; }
 .hero-loop-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-@media (prefers-reduced-motion: reduce) {
-  .hero-motion { display: none; }
-}
 .section-shell { padding: clamp(80px, 10vw, 150px) clamp(28px, 7vw, 104px); }
 .about {
   position: relative;
