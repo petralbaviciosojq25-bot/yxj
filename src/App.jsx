@@ -331,6 +331,8 @@ function ProjectShowcase({ onOpen }) {
   const [coversReady, setCoversReady] = useState(false);
   const [motion, setMotion] = useState(() => projects.map(() => 0));
   const [stackSync, setStackSync] = useState(() => projects.map(() => 0));
+  const previousMotion = useRef(motion);
+  const previousStack = useRef(stackSync);
 
   useEffect(() => {
     if (!window.IntersectionObserver) {
@@ -356,22 +358,30 @@ function ProjectShowcase({ onOpen }) {
       const start = viewport * 0.93;
       const range = Math.max(start - stickyTop, 1);
       const rowRects = rowRefs.current.map((row) => row?.getBoundingClientRect());
-      setMotion(projects.map((_, index) => {
+      const nextMotion = projects.map((_, index) => {
         const row = rowRefs.current[index];
         if (!row) return 0;
         const raw = Math.min(Math.max((start - rowRects[index].top) / range, 0), 1);
         return 1 - Math.pow(1 - raw, 3);
-      }));
+      });
+      if (nextMotion.some((value, index) => value !== previousMotion.current[index])) {
+        previousMotion.current = nextMotion;
+        setMotion(nextMotion);
+      }
 
       const lastRow = rowRefs.current[projects.length - 1];
       if (lastRow && titleRef.current) {
         const rowStickyTop = Number.parseFloat(window.getComputedStyle(lastRow).top) || 0;
         const lastTop = rowRects[projects.length - 1].top;
         const stackIsAligned = lastTop <= rowStickyTop + 0.5;
-        setStackSync(projects.map((_, index) => {
+        const nextStack = projects.map((_, index) => {
           const rowTop = rowRects[index]?.top;
           return stackIsAligned && Number.isFinite(rowTop) ? lastTop - rowTop : 0;
-        }));
+        });
+        if (nextStack.some((value, index) => value !== previousStack.current[index])) {
+          previousStack.current = nextStack;
+          setStackSync(nextStack);
+        }
         const exitOffset = Math.min(lastTop - rowStickyTop, 0);
         titleRef.current.style.setProperty("--project-exit-y", `${exitOffset}px`);
       }
@@ -441,19 +451,26 @@ function OtherProjectCard({ project, onOpen }) {
 }
 
 function OtherProjects({ onOpen }) {
+  const [mobile, setMobile] = useState(() => window.matchMedia("(max-width: 720px)").matches);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 720px)");
+    const update = () => setMobile(query.matches);
+    query.addEventListener("change", update);
+    update();
+    return () => query.removeEventListener("change", update);
+  }, []);
   return (
     <section className="other-projects" aria-labelledby="other-project-title">
       <h2 id="other-project-title" className="other-project-title">Other Project</h2>
-      <div className="other-columns" aria-label="其他项目瀑布流">
+      {!mobile ? <div className="other-columns" aria-label="其他项目瀑布流">
         {otherProjectColumns.map((column, columnIndex) => (
           <div className="other-column" key={columnIndex}>
             {column.map((project) => <OtherProjectCard project={project} onOpen={onOpen} key={project.src} />)}
           </div>
         ))}
-      </div>
-      <div className="other-mobile-stream" aria-label="其他项目瀑布流">
+      </div> : <div className="other-mobile-stream" aria-label="其他项目瀑布流">
         {otherProjects.map((project) => <OtherProjectCard project={project} onOpen={onOpen} key={project.src} />)}
-      </div>
+      </div>}
     </section>
   );
 }
