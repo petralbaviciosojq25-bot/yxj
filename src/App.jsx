@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import imageAssets from "./imageAssets.json";
 import { ProjectImage } from "./ProjectImage.jsx";
+import { useBufferedVideo } from "./useBufferedVideo.js";
 import { PointerRipples } from "./PointerRipples.jsx";
 
 const asset = (name) => `${import.meta.env.BASE_URL}assets/${imageAssets.images[name] || name}`;
@@ -129,11 +130,17 @@ function HeroArtwork({ onReady }) {
   const [videoReady, setVideoReady] = useState(false);
   const videoRefs = useRef([]);
   const originalSource = asset(isMobile ? "home-109-clean-mobile.mp4" : "home-109-clean.mp4");
-  const source = originalSource;
+  const buffered = useBufferedVideo(originalSource, !preferStatic);
+  const source = buffered.url;
+  const [playbackError, setPlaybackError] = useState(false);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const artworkRef = useRef(null);
 
   useEffect(() => {
     if (preferStatic || !source) return undefined;
+    setVideoReady(false);
+    setPlaybackError(false);
+    setAutoplayBlocked(false);
     const videos = [...videoRefs.current];
     let active = 0;
     let transitioning = false;
@@ -148,11 +155,15 @@ function HeroArtwork({ onReady }) {
     });
     const play = (video) => {
       video.muted = true;
-      return video.play();
+      return video.play().catch((error) => {
+        if (!disposed && error.name === "NotAllowedError") setAutoplayBlocked(true);
+        throw error;
+      });
     };
     const ready = () => {
       if (disposed) return;
       setVideoReady(true);
+      setAutoplayBlocked(false);
       onReady();
 
     };
@@ -251,17 +262,24 @@ function HeroArtwork({ onReady }) {
 
   return (
     <div className="hero-artwork" ref={artworkRef}>
-      {preferStatic && <img className="hero-art" src={heroPoster()} alt="紫色未来感角色作品集封面" decoding="async" onLoad={onReady} onError={onReady} />}
+      <img className="hero-art" src={heroPoster()} alt="紫色未来感角色作品集封面" fetchPriority="high" decoding="async" onLoad={onReady} onError={onReady} />
       {!preferStatic && <div className={videoReady ? "hero-motion is-ready" : "hero-motion"} aria-hidden="true">
         {[0, 1].map((index) => <video
           key={index}
           ref={(video) => { videoRefs.current[index] = video; }}
           className="hero-loop-video"
           src={index === 0 && source ? source : undefined}
-          onError={onReady}
+          onError={(event) => { if (event.currentTarget.getAttribute("src")) setPlaybackError(true); }}
           muted playsInline autoPlay={index === 0} preload={index === 0 ? "auto" : "none"}
         />)}
       </div>}
+      {!preferStatic && (!videoReady || playbackError) && <span className="hero-video-loading" role="status">
+        {buffered.error || playbackError ? "视频加载失败，请重试" : autoplayBlocked ? "点击播放视频" : `视频准备中 ${buffered.progress}%`}
+        {(buffered.error || playbackError) && <button type="button" onClick={() => { setVideoReady(false); setPlaybackError(false); buffered.retry(); }}>重试</button>}
+        {autoplayBlocked && !buffered.error && !playbackError && <button type="button" onClick={() => {
+          videoRefs.current.find((video) => video.getAttribute("src"))?.play().catch(() => setAutoplayBlocked(true));
+        }}>播放</button>}
+      </span>}
       <span className="hero-caption">视觉设计作品集</span>
     </div>
   );
@@ -495,7 +513,7 @@ function PortfolioApp() {
     const revealTimer = window.setTimeout(() => {
       overlay.classList.add("is-hidden");
       removeTimer = window.setTimeout(() => overlay.remove(), 650);
-    }, heroReady ? 0 : 8000);
+    }, heroReady ? 0 : 2500);
     return () => {
       window.clearTimeout(revealTimer);
       window.clearTimeout(removeTimer);
@@ -522,7 +540,7 @@ function PortfolioApp() {
         })));
       }
     };
-    const timer = window.setTimeout(warm, 500);
+    const timer = window.setTimeout(warm, 2000);
     return () => { disposed = true; window.clearTimeout(timer); };
   }, [heroReady]);
 

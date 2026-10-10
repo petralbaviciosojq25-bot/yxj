@@ -1,0 +1,144 @@
+{
+  "home-109-clean.mp4": {
+    "size": 21040734,
+    "sha256": "e55eece8cf55040c96c64bbf3c07aa4aefb87b75b2833ea1d403b7f5de0d26ff",
+    "chunks": [
+      {
+        "path": "video-chunks/home-109-clean-00.bin",
+        "size": 1048576,
+        "sha256": "03f56c779e380a39c06ceb2e2ef5b673821f208ef3343b2c2749fed7ad9af183"
+      },
+      {
+        "path": "video-chunks/home-109-clean-01.bin",
+        "size": 1048576,
+        "sha256": "5f4a9038d9a59c1e0409bb318c2f749e3b5445ce384b086980065ff44d689f1d"
+      },
+      {
+        "path": "video-chunks/home-109-clean-02.bin",
+        "size": 1048576,
+        "sha256": "aea2c885bd90bc7e4c95574a0105ba8f1106c3a86c77e11325c2cca8e40a9916"
+      },
+      {
+        "path": "video-chunks/home-109-clean-03.bin",
+        "size": 1048576,
+        "sha256": "a18435b994a73ac3bcc23522b95afdd33dfb275b28283ba877c1721251b843c9"
+      },
+      {
+        "path": "video-chunks/home-109-clean-04.bin",
+        "size": 1048576,
+        "sha256": "ba0c9d70ebcc402a367db5a0c8b0b87f5bbf8c38eb66f44d187f8ef9e347839a"
+      },
+      {
+        "path": "video-chunks/home-109-clean-05.bin",
+        "size": 1048576,
+        "sha256": "c0947fa89d5c8dc4ecb3e9a146b5a56ccbc471c051194113af72505a9eebfd38"
+      },
+      {
+        "path": "video-chunks/home-109-clean-06.bin",
+        "size": 1048576,
+        "sha256": "c13a2f792e1a5243e3e78627a48a9ae4a57f0863c73f40bc4d32789a264e2a6d"
+      },
+      {
+        "path": "video-chunks/home-109-clean-07.bin",
+        "size": 1048576,
+        "sha256": "90e91774ddd4a3105dcdffef1e5f0e45d49d8da4a7b978595aec196864c5af25"
+      },
+      {
+        "path": "video-chunks/home-109-clean-08.bin",
+        "size": 1048576,
+        "sha256": "90636fd2aad81c10e03e7b4c186e438232a1e8824e3c8c9832a0dbfb2a90cb69"
+      },
+      {
+        "path": "video-chunks/home-109-clean-09.bin",
+        "size": 1048576,
+        "sha256": "3d130c4c3ad201a442a5ba235f0c98ac2b68709f6862562d49007955f535e687"
+      },
+      {
+        "path": "video-chunks/home-109-clean-10.bin",
+        "size": 1048576,
+        "sha256": "a0dc709496f8b3326b33a3f5289c82542dcfd27611684b4ac36961bfaebc870e"
+      },
+      {
+        "path": "video-chunks/home-109-clean-11.bin",
+        "size": 1048576,
+        "sha256": "113044eef82a3ee4d6a5e0d0fe682d02592f33637785bfb18cec1a623a2198d4"
+      },
+      {
+        "path": "video-chunks/home-109-clean-12.bin",
+        "size": 1048576,
+        "sha256": "3756946a65bedb28bc31a6ee203a56d7a291efcd16bcef83732a26c8b4933539"
+      },
+      {
+        "path": "video-chunks/home-109-clean-13.bin",
+        "size": 1048576,
+        "sha256": "a3d4afb5ca5d30efe7851c148b8c4ac897356c1f2550936cbb450ffbec4b1929"
+      },
+      {
+        "path": "video-chunks/home-109-clean-14.bin",
+        "size": 1048576,
+        "sha256": "eb17e23e52ad93300c223d91e00b623ade6ccddfa110466885f1d348cc27375c"
+      },
+      {
+        "path": "video-chunks/home-109-clean-15.bin",
+        "size": 1048576,
+        "sha256": "6050c145e5c82bd04145653f00afc20a602c4ecf857bdad5e06f28588c7fd3bb"
+      },
+      {
+        "path": "video-chunks/home-109-clean-16.bin",
+        "size": 1048576,
+        "sha256": "c4a4e2ab11ecf72fb23ab5be94538b99420772f5334255e2a52d375cc6ef5e0b"
+      },
+      {
+        "path": "video-chunks/home-109-clean-17.bin",
+        "size": 1048576,
+        "sha256": "a7ecdc02c26e74f7579d6681d9382640afe1a1c8024347e4c11e43a30b41a0a9"
+      },
+      {
+        "path": "video-chunks/home-109-clean-18.bin",
+        "size": 1048576,
+        "sha256": "bca3c04e0898c3b165c7253465f795067cee972c7edd383c5aa20a4057dc5a7b"
+      },
+      {
+        "path": "video-chunks/home-109-clean-19.bin",
+        "size": 1048576,
+        "sha256": "c9685f56dcaa073f3d1773053078fe8b195431641dc5ecbcd2b33360e9fc8ac4"
+      },
+      {
+        "path": "video-chunks/home-109-clean-20.bin",
+        "size": 69214,
+        "sha256": "3c6987d5d14cda2b4352ffee8174547e3ec0b3ed74b05a10bb8c2a7cc43e686b"
+      }
+    ]
+  },
+  "home-109-clean-mobile.mp4": {
+    "size": 4393254,
+    "sha256": "b674fb66bc6267e522b588447a0fed3a68bd1bfd84a064fde23ce193232f320f",
+    "chunks": [
+      {
+        "path": "video-chunks/home-109-clean-mobile-00.bin",
+        "size": 1048576,
+        "sha256": "700d04b5734d65fa73cbd0f18123ccb6aaaeeb8312d5628d2a95f67ad61e1310"
+      },
+      {
+        "path": "video-chunks/home-109-clean-mobile-01.bin",
+        "size": 1048576,
+        "sha256": "9b5d8200cef5bad1565ea9d865cf88140d65b070ddba713a8b5f9fd378f0fe94"
+      },
+      {
+        "path": "video-chunks/home-109-clean-mobile-02.bin",
+        "size": 1048576,
+        "sha256": "eb0e2b6c739f89b66996fb9a26e0fa88fe8e7925d0d439c73d7132bd0377102e"
+      },
+      {
+        "path": "video-chunks/home-109-clean-mobile-03.bin",
+        "size": 1048576,
+        "sha256": "7ce9700bfccc94abf571dff8c57d613af84accf0235658b5cc2c14817a1db995"
+      },
+      {
+        "path": "video-chunks/home-109-clean-mobile-04.bin",
+        "size": 198950,
+        "sha256": "2787843186f6bb45d57d42ff8f1ecdad33a9be83b10033873df20dc6c9e63a4c"
+      }
+    ]
+  }
+}
