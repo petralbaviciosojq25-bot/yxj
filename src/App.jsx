@@ -11,7 +11,7 @@ const projects = [
   { cover: asset("project-cover-1.webp?v=20261008b"), mobileCover: asset("project-cover-1-mobile.webp?v=20261008b"), src: asset("project-kv-20261010-v2.webp"), index: "01", title: "运营 KV", full: true },
   { cover: asset("project-cover-2.webp?v=20261008b"), mobileCover: asset("project-cover-2-mobile.webp?v=20261008b"), src: asset("project-brand.webp"), index: "02", title: "品牌活动", full: true },
   { cover: asset("project-cover-3.webp?v=20261008b"), mobileCover: asset("project-cover-3-mobile.webp?v=20261008b"), src: asset("project-ip.webp"), index: "03", title: "IP 设计", full: true },
-  { cover: asset("project-cover-4.webp?v=20261008b"), mobileCover: asset("project-cover-4-mobile.webp?v=20261008b"), src: asset("project-play.webp"), index: "04", title: "玩法活动", full: true },
+  { cover: asset("project-cover-4.webp?v=20261008b"), mobileCover: asset("project-cover-4-mobile.webp?v=20261008b"), src: asset("project-play.webp"), motionVideo: asset("summer-paradise-motion.mp4"), index: "04", title: "玩法活动", full: true },
 ];
 
 const otherProjects = [
@@ -597,6 +597,12 @@ function PortfolioApp() {
                 </video>
               ) : (
                 <ProjectImage src={activeProject.detail || activeProject.preview || activeProject.src} alt={`${activeProject.title || `其他项目 ${activeProject.index}`}完整长图`} />
+              )}
+              {activeProject.motionVideo && (
+                <video className="project-motion-video" controls playsInline preload="metadata" aria-label="夏日乐园动效展示">
+                  <source src={activeProject.motionVideo} type="video/mp4" />
+                  当前浏览器不支持视频播放。
+                </video>
               )}
             </div>
           </div>
