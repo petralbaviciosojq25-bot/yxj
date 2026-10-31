@@ -471,6 +471,10 @@ function OtherProjects({ onOpen }) {
       </div> : <div className="other-mobile-stream" aria-label="其他项目瀑布流">
         {otherProjects.map((project) => <OtherProjectCard project={project} onOpen={onOpen} key={project.src} />)}
       </div>}
+      <video className="other-fathers-day-video" controls playsInline preload="metadata" aria-label="父亲节录屏展示">
+        <source src={asset("fathers-day-recording.mp4")} type="video/mp4" />
+        当前浏览器不支持视频播放。
+      </video>
     </section>
   );
 }
