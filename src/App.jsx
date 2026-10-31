@@ -58,7 +58,7 @@ const otherProjects = [
   },
 ];
 
-const fathersDayRecording = { src: asset("fathers-day-recording.mp4"), inlineVideo: true, index: "10", title: "父亲节录屏展示" };
+const fathersDayRecording = { src: asset("fathers-day-recording.mp4"), video: asset("fathers-day-recording.mp4"), previewVideo: true, type: "video", index: "10", title: "人头马父亲节H5" };
 otherProjects.push(fathersDayRecording);
 
 const otherProjectColumns = [
@@ -441,19 +441,13 @@ function ProjectShowcase({ onOpen }) {
 }
 
 function OtherProjectCard({ project, onOpen }) {
-  if (project.inlineVideo) return (
-    <video className="other-fathers-day-video" controls playsInline preload="metadata" aria-label={project.title}>
-      <source src={project.src} type="video/mp4" />
-      当前浏览器不支持视频播放。
-    </video>
-  );
   return (
     <button
       className="other-card other-card-button"
       onClick={() => onOpen(project)}
       aria-label={`打开${project.title || `其他项目 ${project.index}`}`}
     >
-      <img src={project.src} alt={`${project.title || `其他项目作品 ${project.index}`}封面`} loading="lazy" decoding="async" fetchPriority="low" />
+      {project.previewVideo ? <video className="other-fathers-day-video" src={project.video} muted playsInline preload="metadata" aria-hidden="true" /> : <img src={project.src} alt={`${project.title || `其他项目作品 ${project.index}`}封面`} loading="lazy" decoding="async" fetchPriority="low" />}
       {project.type === "video" && <span className="other-video-mark" aria-hidden="true">▶</span>}
     </button>
   );
@@ -600,7 +594,7 @@ function PortfolioApp() {
             </div>
             <div className="modal-scroll">
               {activeProject.type === "video" ? (
-                <video className="modal-video" controls playsInline preload="metadata" poster={activeProject.src}>
+                <video className="modal-video" controls playsInline preload="metadata" poster={activeProject.previewVideo ? undefined : activeProject.src}>
                   <source src={activeProject.video} type="video/mp4" />
                   当前浏览器不支持视频播放。
                 </video>
