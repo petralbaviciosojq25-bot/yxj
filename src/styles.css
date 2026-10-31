@@ -692,8 +692,7 @@ html.pointer-glow-active, html.pointer-glow-active * { cursor: none !important; 
 }
 
 .project-image-tiles { width: min(82%, 720px); margin: 0 auto; }
-.other-fathers-day-video { display: block; width: min(56vw, 800px); height: auto; margin: 28px auto 0; background: #000; }
-@media (max-width: 720px) { .other-fathers-day-video { width: calc(100% - 48px); } }
+.other-fathers-day-video { display: block; width: 100%; height: auto; aspect-ratio: 462 / 830; margin: 0; border-radius: 12px; background: #000; }
 .modal-scroll .project-image-tiles img { width: 100%; margin: 0; }
 .project-motion-video {
   display: block;

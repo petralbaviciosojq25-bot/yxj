@@ -58,8 +58,11 @@ const otherProjects = [
   },
 ];
 
+const fathersDayRecording = { src: asset("fathers-day-recording.mp4"), inlineVideo: true, index: "10", title: "父亲节录屏展示" };
+otherProjects.push(fathersDayRecording);
+
 const otherProjectColumns = [
-  [otherProjects[0], otherProjects[3], otherProjects[6]],
+  [otherProjects[0], otherProjects[3], otherProjects[6], fathersDayRecording],
   [otherProjects[1], otherProjects[4], otherProjects[7]],
   [otherProjects[2], otherProjects[5], otherProjects[8]],
 ];
@@ -438,6 +441,12 @@ function ProjectShowcase({ onOpen }) {
 }
 
 function OtherProjectCard({ project, onOpen }) {
+  if (project.inlineVideo) return (
+    <video className="other-fathers-day-video" controls playsInline preload="metadata" aria-label={project.title}>
+      <source src={project.src} type="video/mp4" />
+      当前浏览器不支持视频播放。
+    </video>
+  );
   return (
     <button
       className="other-card other-card-button"
@@ -471,10 +480,6 @@ function OtherProjects({ onOpen }) {
       </div> : <div className="other-mobile-stream" aria-label="其他项目瀑布流">
         {otherProjects.map((project) => <OtherProjectCard project={project} onOpen={onOpen} key={project.src} />)}
       </div>}
-      <video className="other-fathers-day-video" controls playsInline preload="metadata" aria-label="父亲节录屏展示">
-        <source src={asset("fathers-day-recording.mp4")} type="video/mp4" />
-        当前浏览器不支持视频播放。
-      </video>
     </section>
   );
 }
